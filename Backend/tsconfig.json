@@ -1,0 +1,36 @@
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+    // File Layout
+    "rootDir": "src",
+    "outDir": "dist",
+
+    // Environment Settings
+    "module": "commonjs",
+    "target": "ES2020",
+    "moduleResolution": "node",
+    "lib": ["ES2020"],
+    "types": ["node"],          // <-- penting untuk import 'process', dll
+
+    // Other Outputs
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    // Stricter Typechecking Options
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    // Recommended Options
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+
+    // >>> ini yang tadinya bikin error
+    "verbatimModuleSyntax": false,  // <-- UBAH ke false
+    // "jsx": "react-jsx",          // <-- backend gak butuh, jadi dihapus
+    // "isolatedModules": true,     // <-- optional, boleh dihapus kalau bikin ribet
+    // "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force"
+  }
+}
