@@ -11,7 +11,7 @@ const allowedRoles = ["KETUA", "BENDAHARA", "JAMAAH"] as const;
 // ======================================================
 // GET ALL USERS
 // ======================================================
-export async function getUsers(req: Request, res: Response) {
+export async function tampilkanPengguna(req: Request, res: Response) {
   try {
     const [rows]: any = await db.query(
       `SELECT id, username, email, role, status 
@@ -20,7 +20,7 @@ export async function getUsers(req: Request, res: Response) {
     );
     return res.json(rows);
   } catch (err) {
-    console.error("getUsers error:", err);
+    console.error("tampilkanPengguna error:", err);
     return res.status(500).json({ message: "Server error" });
   }
 }
@@ -28,7 +28,7 @@ export async function getUsers(req: Request, res: Response) {
 // ======================================================
 // CREATE USER
 // ======================================================
-export async function createUser(req: Request, res: Response) {
+export async function tambahPengguna(req: Request, res: Response) {
   let { username, email, password, role } = req.body as {
     username?: string;
     email?: string;
@@ -89,41 +89,48 @@ export async function createUser(req: Request, res: Response) {
       status: "Aktif",
     });
   } catch (err) {
-    console.error("createUser error:", err);
+    console.error("tambahPengguna error:", err);
     return res.status(500).json({ message: "Server error" });
   }
 }
 
-// ======================================================
-// UPDATE USER
-// ======================================================
-export async function updateUser(req: Request, res: Response) {
+export async function updatePengguna(req: Request, res: Response) {
   const id = Number(req.params.id);
-  let { username, email, role } = req.body as {
+  let { username, email, role, status } = req.body as {
     username?: string;
     email?: string;
     role?: string;
+    status?: string;
   };
 
   if (!id || Number.isNaN(id)) {
     return res.status(400).json({ message: "ID tidak valid" });
   }
 
-  if (!username || !email || !role) {
-    return res.status(400).json({ message: "Data tidak lengkap" });
+  // status optional, tapi kalau ada harus valid
+  if (status && !["Aktif", "Nonaktif"].includes(status)) {
+    return res.status(400).json({
+      message: "Status harus 'Aktif' atau 'Nonaktif'",
+    });
   }
 
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ message: "Format email tidak valid" });
+  // ketua tidak boleh menonaktifkan dirinya sendiri
+  if (status === "Nonaktif" && (req as any).user?.id === id) {
+    return res.status(400).json({
+      message: "Ketua tidak dapat menonaktifkan akunnya sendiri",
+    });
   }
 
-  role = role.toUpperCase();
-  if (!allowedRoles.includes(role as any)) {
-    return res.status(400).json({ message: "Role tidak valid" });
+  // role optional, tapi kalau ada harus valid
+  if (role) {
+    role = role.toUpperCase();
+    if (!allowedRoles.includes(role as any)) {
+      return res.status(400).json({ message: "Role tidak valid" });
+    }
   }
 
   try {
-    // pastikan user ada
+    // cek apakah user ada
     const [exists]: any = await db.query(
       "SELECT id FROM pengguna WHERE id = ?",
       [id]
@@ -132,29 +139,66 @@ export async function updateUser(req: Request, res: Response) {
       return res.status(404).json({ message: "Pengguna tidak ditemukan" });
     }
 
-    // username unik kecuali diri sendiri
-    const [u1]: any = await db.query(
-      "SELECT id FROM pengguna WHERE username = ? AND id <> ?",
-      [username, id]
-    );
-    if (u1.length > 0) {
-      return res.status(400).json({ message: "Username sudah digunakan" });
+    // Email wajib dicek validitas kalau dikirim
+    if (email) {
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Format email tidak valid" });
+      }
+
+      // email unik kecuali diri sendiri
+      const [u2]: any = await db.query(
+        "SELECT id FROM pengguna WHERE email = ? AND id <> ?",
+        [email, id]
+      );
+      if (u2.length > 0) {
+        return res.status(400).json({ message: "Email sudah digunakan" });
+      }
     }
 
-    // email unik kecuali diri sendiri
-    const [u2]: any = await db.query(
-      "SELECT id FROM pengguna WHERE email = ? AND id <> ?",
-      [email, id]
-    );
-    if (u2.length > 0) {
-      return res.status(400).json({ message: "Email sudah digunakan" });
+    // username unik kecuali diri sendiri
+    if (username) {
+      const [u1]: any = await db.query(
+        "SELECT id FROM pengguna WHERE username = ? AND id <> ?",
+        [username, id]
+      );
+      if (u1.length > 0) {
+        return res.status(400).json({ message: "Username sudah digunakan" });
+      }
     }
+
+    // 🔥 Build dynamic update query
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    if (username) {
+      fields.push("username = ?");
+      values.push(username);
+    }
+
+    if (email) {
+      fields.push("email = ?");
+      values.push(email);
+    }
+
+    if (role) {
+      fields.push("role = ?");
+      values.push(role);
+    }
+
+    if (status) {
+      fields.push("status = ?");
+      values.push(status);
+    }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ message: "Tidak ada data yang diubah" });
+    }
+
+    values.push(id);
 
     await db.query(
-      `UPDATE pengguna
-       SET username = ?, email = ?, role = ?
-       WHERE id = ?`,
-      [username, email, role, id]
+      `UPDATE pengguna SET ${fields.join(", ")} WHERE id = ?`,
+      values
     );
 
     return res.json({
@@ -162,50 +206,10 @@ export async function updateUser(req: Request, res: Response) {
       username,
       email,
       role,
+      status,
     });
   } catch (err) {
-    console.error("updateUser error:", err);
-    return res.status(500).json({ message: "Server error" });
-  }
-}
-
-// ======================================================
-// UPDATE USER STATUS (Aktif / Nonaktif)
-// ======================================================
-export async function updateUserStatus(req: Request, res: Response) {
-  const id = Number(req.params.id);
-  const { status } = req.body as { status?: string }; // "Aktif" atau "Nonaktif"
-
-  if (!id || Number.isNaN(id)) {
-    return res.status(400).json({ message: "ID tidak valid" });
-  }
-
-  if (!status || !["Aktif", "Nonaktif"].includes(status)) {
-    return res.status(400).json({
-      message: "Status harus 'Aktif' atau 'Nonaktif'",
-    });
-  }
-
-  // Ketua tidak boleh menonaktifkan dirinya sendiri
-  if ((req as any).user && (req as any).user.id === id) {
-    return res.status(400).json({
-      message: "Ketua tidak dapat menonaktifkan akunnya sendiri",
-    });
-  }
-
-  try {
-    const [result]: any = await db.query(
-      `UPDATE pengguna SET status = ? WHERE id = ?`,
-      [status, id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Pengguna tidak ditemukan" });
-    }
-
-    return res.json({ id, status });
-  } catch (err) {
-    console.error("updateUserStatus error:", err);
+    console.error("updatePengguna error:", err);
     return res.status(500).json({ message: "Server error" });
   }
 }
@@ -213,7 +217,7 @@ export async function updateUserStatus(req: Request, res: Response) {
 // ======================================================
 // RESET PASSWORD
 // ======================================================
-export async function resetUserPassword(req: Request, res: Response) {
+export async function updatepasswordPengguna(req: Request, res: Response) {
   const id = Number(req.params.id);
   const { newPassword } = req.body as { newPassword?: string };
 
@@ -239,10 +243,10 @@ export async function resetUserPassword(req: Request, res: Response) {
 
     const hashed = await bcrypt.hash(newPassword, 10);
 
-    await db.query(
-      `UPDATE pengguna SET password_hash = ? WHERE id = ?`,
-      [hashed, id]
-    );
+    await db.query(`UPDATE pengguna SET password_hash = ? WHERE id = ?`, [
+      hashed,
+      id,
+    ]);
 
     return res.json({ message: "Password berhasil di-reset" });
   } catch (err) {
@@ -254,7 +258,7 @@ export async function resetUserPassword(req: Request, res: Response) {
 // ======================================================
 // DELETE USER
 // ======================================================
-export async function deleteUser(req: Request, res: Response) {
+export async function hapusPengguna(req: Request, res: Response) {
   const id = Number(req.params.id);
 
   if (!id || Number.isNaN(id)) {
@@ -282,10 +286,9 @@ export async function deleteUser(req: Request, res: Response) {
       });
     }
 
-    const [result]: any = await db.query(
-      "DELETE FROM pengguna WHERE id = ?",
-      [id]
-    );
+    const [result]: any = await db.query("DELETE FROM pengguna WHERE id = ?", [
+      id,
+    ]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Pengguna tidak ditemukan" });

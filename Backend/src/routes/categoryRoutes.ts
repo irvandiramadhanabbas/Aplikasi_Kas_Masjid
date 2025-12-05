@@ -1,11 +1,11 @@
 import { Router } from "express";
 import {
   getKategori,
-  createKategori,
+  tambahKategori,
   updateKategori,
-  deleteKategori,
+  hapusKategori,
 } from "../controllers/categoryController";
-import { authMiddleware ,requireRole } from "../middlewares/authMiddleware";
+import { authMiddleware, requireRole } from "../middlewares/authMiddleware";
 
 const router = Router();
 
@@ -16,8 +16,8 @@ router.use(authMiddleware);
 router.get("/", requireRole("KETUA", "BENDAHARA", "JAMAAH"), getKategori);
 
 // hanya BENDAHARA yang boleh kelola
-router.post("/", requireRole("BENDAHARA"), createKategori);
+router.post("/", requireRole("BENDAHARA"), tambahKategori);
 router.put("/:id", requireRole("BENDAHARA"), updateKategori);
-router.delete("/:id", requireRole("BENDAHARA"), deleteKategori);
+router.delete("/:id", requireRole("BENDAHARA"), hapusKategori);
 
 export default router;

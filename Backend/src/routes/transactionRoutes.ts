@@ -1,9 +1,9 @@
 import { Router } from "express";
 import {
   getTransactions,
-  createTransaction,
+  tambahTransaction,
   updateTransaction,
-  deleteTransaction,
+  // hapusTransaction,
 } from "../controllers/transactionController";
 import { requireRole } from "../middlewares/authMiddleware";
 
@@ -13,8 +13,8 @@ const router = Router();
 router.get("/", getTransactions);
 
 // hanya BENDAHARA yang boleh input/edit/hapus transaksi
-router.post("/", requireRole("BENDAHARA"), createTransaction);
+router.post("/", requireRole("BENDAHARA"), tambahTransaction);
 router.put("/:id", requireRole("BENDAHARA"), updateTransaction);
-router.delete("/:id", requireRole("BENDAHARA"), deleteTransaction);
+// router.delete("/:id", requireRole("BENDAHARA"), hapusTransaction);
 
 export default router;

@@ -1,20 +1,20 @@
 import { Router } from "express";
 import {
-  getUsers,
-  createUser,
-  updateUser,
-  updateUserStatus,
-  resetUserPassword,
-  deleteUser,
+  tampilkanPengguna,
+  tambahPengguna,
+  updatePengguna,
+  // updateUserStatus,
+  updatepasswordPengguna,
+  hapusPengguna,
 } from "../controllers/userController";
 
 const router = Router();
 
-router.get("/", getUsers);
-router.post("/", createUser);
-router.put("/:id", updateUser);
-router.patch("/:id/status", updateUserStatus);
-router.patch("/:id/reset-password", resetUserPassword);
-router.delete("/:id", deleteUser);
+router.get("/", tampilkanPengguna);
+router.post("/", tambahPengguna);
+router.put("/:id", updatePengguna);
+//router.patch("/:id/status", updateUserStatus);
+router.patch("/:id/reset-password", updatepasswordPengguna);
+router.delete("/:id", hapusPengguna);
 
 export default router;

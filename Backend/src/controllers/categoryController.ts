@@ -18,7 +18,7 @@ export async function getKategori(req: Request, res: Response) {
 }
 
 // POST /kategori
-export async function createKategori(req: Request, res: Response) {
+export async function tambahKategori(req: Request, res: Response) {
   const { nama } = req.body;
 
   if (!nama || nama.trim() === "") {
@@ -33,7 +33,7 @@ export async function createKategori(req: Request, res: Response) {
     );
 
     if (exists.length > 0) {
-      return res.status(400).json({ message: "Nama kategori sudah digunakan" });
+      return res.status(400).json({ message: "Nama kategori sudah ada" });
     }
 
     const [result]: any = await db.query(
@@ -46,7 +46,7 @@ export async function createKategori(req: Request, res: Response) {
       nama: nama.trim(),
     });
   } catch (err) {
-    console.error("createKategori error:", err);
+    console.error("tambahKategori error:", err);
     return res.status(500).json({ message: "Server error" });
   }
 }
@@ -84,10 +84,10 @@ export async function updateKategori(req: Request, res: Response) {
       return res.status(400).json({ message: "Nama kategori sudah digunakan" });
     }
 
-    await db.query(
-      "UPDATE kategori SET nama = ? WHERE id = ?",
-      [nama.trim(), id]
-    );
+    await db.query("UPDATE kategori SET nama = ? WHERE id = ?", [
+      nama.trim(),
+      id,
+    ]);
 
     return res.json({ id, nama: nama.trim() });
   } catch (err) {
@@ -97,7 +97,7 @@ export async function updateKategori(req: Request, res: Response) {
 }
 
 // DELETE /kategori/:id
-export async function deleteKategori(req: Request, res: Response) {
+export async function hapusKategori(req: Request, res: Response) {
   const id = Number(req.params.id);
 
   if (!id || isNaN(id)) {
@@ -117,10 +117,9 @@ export async function deleteKategori(req: Request, res: Response) {
       });
     }
 
-    const [result]: any = await db.query(
-      "DELETE FROM kategori WHERE id = ?",
-      [id]
-    );
+    const [result]: any = await db.query("DELETE FROM kategori WHERE id = ?", [
+      id,
+    ]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Kategori tidak ditemukan" });

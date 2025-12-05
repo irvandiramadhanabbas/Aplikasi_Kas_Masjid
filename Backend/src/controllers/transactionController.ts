@@ -87,7 +87,7 @@ export async function getTransactions(req: Request, res: Response) {
 // ============================================
 // POST /transactions
 // ============================================
-export async function createTransaction(req: Request, res: Response) {
+export async function tambahTransaction(req: Request, res: Response) {
   let { tglTransaksi, jenis, kategoriId, keterangan, nominal } = req.body;
 
   if (!tglTransaksi || !jenis || !kategoriId || nominal == null) {
@@ -226,7 +226,7 @@ export async function updateTransaction(req: Request, res: Response) {
 // ============================================
 // DELETE /transactions/:id
 // ============================================
-export async function deleteTransaction(req: Request, res: Response) {
+/* export async function hapusTransaction(req: Request, res: Response) {
   const id = Number(req.params.id);
 
   if (!id || Number.isNaN(id)) {
@@ -259,4 +259,4 @@ export async function deleteTransaction(req: Request, res: Response) {
     console.error("deleteTransaction error:", err);
     return res.status(500).json({ message: "Server error" });
   }
-}
+}*/

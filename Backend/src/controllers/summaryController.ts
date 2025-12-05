@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { db } from "../db";
 
-export async function getSummary(req: Request, res: Response) {
+export async function tampilkanRingkasan(req: Request, res: Response) {
   try {
     const [rows]: any = await db.query(`
       SELECT
@@ -20,7 +20,7 @@ export async function getSummary(req: Request, res: Response) {
       totalSaldo,
     });
   } catch (err) {
-    console.error("getSummary error:", err);
+    console.error("tampilkanRingkasan error:", err);
     return res.status(500).json({ message: "Server error" });
   }
 }
